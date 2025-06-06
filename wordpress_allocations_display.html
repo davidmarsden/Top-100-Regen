@@ -2061,27 +2061,6 @@
             if(revealNextButton) revealNextButton.disabled = (revealIndex >= shuffledRevealList.length);
         }
 
-        async function getManagerHotTake(managerName, managerStatus, clubName, clubRank, clubDivision, buttonElement) {
-            const resultDivId = buttonElement.parentNode.parentNode.querySelector('[id^="geminiHotTakeResult_"]').id;
-            const resultDiv = document.getElementById(resultDivId);
-            if (!resultDiv) { console.error("Could not find result div for Gemini content."); return; }
-            resultDiv.innerHTML = '<div class="flex items-center justify-center"><div class="gemini-spinner"></div> Generating...</div>';
-            buttonElement.disabled = true;
-            const takeStyles = ["pundit hot take", "shocked fan reaction", "rival manager's sarcastic comment", "club legend's optimistic quote", "sensationalist newspaper headline", "tactical insight", "transfer speculation snippet"];
-            const randomStyle = takeStyles[Math.floor(Math.random() * takeStyles.length)];
-            const prompt = `Generate a short, exciting, and slightly exaggerated '${randomStyle}' (1-2 sentences, max 40 words) about football manager ${managerName} (${managerStatus}) being appointed to ${clubName} (Opta Rank: ${clubRank || 'Unknown Rank'}), now in Division ${clubDivision || 'an unknown division'}. Focus on a potential storyline or impact. Be creative and punchy. If the style is 'newspaper headline', make it sound like one.`;
-            const apiKey = ""; const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }]; const payload = { contents: chatHistory };
-            try {
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) { const errorData = await response.json(); throw new Error(`Gemini API request failed: ${errorData?.error?.message || response.statusText}`); }
-                const result = await response.json();
-                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
-                    resultDiv.innerHTML = `<p>"${result.candidates[0].content.parts[0].text.replace(/\n/g, '<br>')}"</p>`;
-                } else { resultDiv.textContent = "Couldn't generate a hot take (unexpected response)."; }
-            } catch (error) { resultDiv.textContent = `Error: ${error.message || "Failed to get prediction."}`; }
-        }
-
         function toggleFullListView() {
             const fullListSectionEl = document.getElementById('fullListSection');
             const revealSectionEl = document.getElementById('revealSection');
