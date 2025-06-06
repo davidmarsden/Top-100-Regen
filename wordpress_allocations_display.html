@@ -1,0 +1,2145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top 100 Regen Manager Appointments - Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .card { background-color: #fff; border-radius: 0.5rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); margin-bottom: 1rem; }
+        .card-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: #1F2937; }
+        .table-container { max-height: 400px; overflow-y: auto; }
+        .sticky-header th { position: sticky; top: 0; background-color: #F9FAFB; z-index: 10; }
+        .gemini-spinner { border: 4px solid #f3f3f3; border-top: 4px solid #6366F1; border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; display: inline-block; margin-right: 8px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .app-logo { max-width: 150px; margin: 0 auto 1rem; }
+        .search-result-item { border-bottom: 1px solid #e5e7eb; padding: 0.75rem 0; }
+        .search-result-item:last-child { border-bottom: none; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+    <div class="max-w-6xl mx-auto bg-white shadow-xl rounded-lg p-6 md:p-10">
+        <header class="mb-8 text-center">
+            <img src="#" alt="App Logo" id="appLogo" class="app-logo hidden"/> 
+            <h1 class="text-4xl font-bold text-indigo-600">🏆 Top 100 Regen Manager Appointments ⚽</h1>
+            <p class="text-gray-600 mt-2">Official Allocation Results</p>
+        </header>
+        <main>
+            <div class="text-center mb-6">
+                 <button id="resetAppButton" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition duration-150 ease-in-out">🔄 Reset View</button>
+            </div>
+            <section id="resultsSection">
+                <div id="revealSection" class="mb-8">
+                    <h2 class="text-3xl font-semibold text-indigo-700 mb-4 text-center">✨ Manager Reveal ✨</h2>
+                    <div class="text-center mb-4">
+                        <button id="revealNextButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg shadow transition duration-150 ease-in-out">Reveal Next Manager</button>
+                        <button id="showAllButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg shadow transition duration-150 ease-in-out ml-2">Show Full List</button>
+                    </div>
+                    <div id="revealCardArea" class="card min-h-[200px] flex flex-col items-center justify-center text-gray-500">Click "Reveal Next Manager" to start...</div>
+                </div>
+                <div id="searchFeatureSection" class="mb-8 card">
+                    <h2 class="text-2xl font-semibold text-indigo-700 mb-3">🔍 Search Allocations</h2>
+                    <div class="flex space-x-2 mb-3">
+                        <input type="text" id="searchInput" placeholder="Enter Manager or Club name..." class="flex-grow px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <button id="searchButton" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded-md shadow">Search</button>
+                    </div>
+                    <div id="searchResultsArea" class="min-h-[50px] text-gray-600"></div>
+                </div>
+                <div id="fullListSection" class="mb-8 hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-3xl font-semibold text-indigo-700">📋 Full Allocation List</h2>
+                    </div>
+                    <div id="allocationsTableContainer" class="table-container card p-0">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky-header">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Division</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manager Name</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned Club</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Club Opta Rank</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manager Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allocationsTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <div id="messages" class="mt-6"></div>
+        </main>
+        <footer class="mt-12 text-center text-sm text-gray-500">
+            <p>&copy; 2024 Top 100 Regen Manager Appointments. Official Results.</p>
+        </footer>
+    </div>
+    <audio id="revealTune" src="#" preload="auto"></audio> 
+    <script>
+        // === IMPORTANT: PRE-LOADED DATA SECTION ===
+        // Paste the content of your `final_allocations.json` file here, inside the single quotes.
+        // IMPORTANT: If your JSON data itself contains single quotes, they must be escaped with a backslash (\').
+        const preloadedAllocationsJSON = `[
+  {
+    "manager": {
+      "name": "David Marsden",
+      "status": "Current",
+      "preferences": [
+        "Mamelodi Sundowns",
+        "Fulham",
+        "Brentford"
+      ],
+      "assignedClub": "Mamelodi Sundowns"
+    },
+    "club": {
+      "name": "Mamelodi Sundowns",
+      "opta_rank": 146,
+      "rating": 80.2,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "James mckenzie",
+      "status": "Current",
+      "preferences": [
+        "Real Madrid",
+        "PSG",
+        "Barcelona"
+      ],
+      "assignedClub": "Real Madrid"
+    },
+    "club": {
+      "name": "Real Madrid",
+      "opta_rank": 2,
+      "rating": 97.6,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Chris Meida",
+      "status": "Current",
+      "preferences": [
+        "New England",
+        "Tottenham Hotspur",
+        "Fulham"
+      ],
+      "assignedClub": "New England"
+    },
+    "club": {
+      "name": "New England",
+      "opta_rank": 250,
+      "rating": 76.7,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Hugo Costa",
+      "status": "Current",
+      "preferences": [
+        "Porto",
+        "Borussia Dortmund",
+        "Napoli"
+      ],
+      "assignedClub": "Porto"
+    },
+    "club": {
+      "name": "Porto",
+      "opta_rank": 25,
+      "rating": 89.5,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Patrick Dunn",
+      "status": "Current",
+      "preferences": [
+        "Liverpool",
+        "Atlético Madrid",
+        "Juventus"
+      ],
+      "assignedClub": "Liverpool"
+    },
+    "club": {
+      "name": "Liverpool",
+      "opta_rank": 4,
+      "rating": 96.3,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "André Guerra",
+      "status": "Current",
+      "preferences": [
+        "PSG",
+        "Internazionale",
+        "Atlético Madrid"
+      ],
+      "assignedClub": "PSG"
+    },
+    "club": {
+      "name": "PSG",
+      "opta_rank": 6,
+      "rating": 94.5,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Davy V",
+      "status": "Current",
+      "preferences": [
+        "Club Brugge",
+        "Union Saint-Gilloise",
+        "Al Nassr"
+      ],
+      "assignedClub": "Club Brugge"
+    },
+    "club": {
+      "name": "Club Brugge",
+      "opta_rank": 52,
+      "rating": 85.5,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Neil Frankland",
+      "status": "Current",
+      "preferences": [
+        "Burnley",
+        "Manchester United",
+        "Everton"
+      ],
+      "assignedClub": "Burnley"
+    },
+    "club": {
+      "name": "Burnley",
+      "opta_rank": 122,
+      "rating": 80.9,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Beddows",
+      "status": "Current",
+      "preferences": [
+        "Manchester United",
+        "Milan",
+        "Internazionale"
+      ],
+      "assignedClub": "Manchester United"
+    },
+    "club": {
+      "name": "Manchester United",
+      "opta_rank": 18,
+      "rating": 90.3,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Glen Mullan",
+      "status": "Current",
+      "preferences": [
+        "Chelsea",
+        "Barcelona",
+        "Real Madrid"
+      ],
+      "assignedClub": "Chelsea"
+    },
+    "club": {
+      "name": "Chelsea",
+      "opta_rank": 29,
+      "rating": 88.8,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Carl Martin",
+      "status": "Current",
+      "preferences": [
+        "Newcastle United",
+        "Borussia Dortmund",
+        "AFC Bournemouth"
+      ],
+      "assignedClub": "Newcastle United"
+    },
+    "club": {
+      "name": "Newcastle United",
+      "opta_rank": 24,
+      "rating": 90,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "The FM",
+      "status": "Current",
+      "preferences": [
+        "Arsenal",
+        "Borussia Dortmund",
+        "Atalanta"
+      ],
+      "assignedClub": "Arsenal"
+    },
+    "club": {
+      "name": "Arsenal",
+      "opta_rank": 5,
+      "rating": 95.5,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Scott Mckenzie",
+      "status": "Current",
+      "preferences": [
+        "Barcelona",
+        "Liverpool",
+        "Chelsea"
+      ],
+      "assignedClub": "Barcelona"
+    },
+    "club": {
+      "name": "Barcelona",
+      "opta_rank": 10,
+      "rating": 91.9,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Chris Baggio",
+      "status": "Current",
+      "preferences": [
+        "Aston Villa",
+        "Lazio",
+        "Olympique Marseille"
+      ],
+      "assignedClub": "Aston Villa"
+    },
+    "club": {
+      "name": "Aston Villa",
+      "opta_rank": 14,
+      "rating": 90.8,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Carlos Azevedo",
+      "status": "Current",
+      "preferences": [
+        "Benfica",
+        "Arsenal",
+        "Milan"
+      ],
+      "assignedClub": "Benfica"
+    },
+    "club": {
+      "name": "Benfica",
+      "opta_rank": 16,
+      "rating": 90.5,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Mike Scallotti",
+      "status": "Current",
+      "preferences": [
+        "Bayer Leverkusen",
+        "RB Leipzig",
+        "Stuttgart"
+      ],
+      "assignedClub": "Bayer Leverkusen"
+    },
+    "club": {
+      "name": "Bayer Leverkusen",
+      "opta_rank": 8,
+      "rating": 93.7,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Andrew Kelly",
+      "status": "Current",
+      "preferences": [
+        "Villarreal",
+        "Fiorentina",
+        "West Ham United"
+      ],
+      "assignedClub": "Villarreal"
+    },
+    "club": {
+      "name": "Villarreal",
+      "opta_rank": 59,
+      "rating": 84.8,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Jay Jones",
+      "status": "Current",
+      "preferences": [
+        "Valencia",
+        "Ajax",
+        "Freiburg"
+      ],
+      "assignedClub": "Valencia"
+    },
+    "club": {
+      "name": "Valencia",
+      "opta_rank": 61,
+      "rating": 84.6,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Walter Gogh",
+      "status": "Current",
+      "preferences": [
+        "Borussia Dortmund",
+        "Atalanta",
+        "Napoli"
+      ],
+      "assignedClub": "Borussia Dortmund"
+    },
+    "club": {
+      "name": "Borussia Dortmund",
+      "opta_rank": 11,
+      "rating": 91.7,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Salvatore Zerbo",
+      "status": "Current",
+      "preferences": [
+        "Juventus",
+        "Fiorentina",
+        "Roma"
+      ],
+      "assignedClub": "Juventus"
+    },
+    "club": {
+      "name": "Juventus",
+      "opta_rank": 12,
+      "rating": 91.6,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Regan Thompson",
+      "status": "Current",
+      "preferences": [
+        "Athletic Club",
+        "Ajax",
+        "Rennes"
+      ],
+      "assignedClub": "Athletic Club"
+    },
+    "club": {
+      "name": "Athletic Club",
+      "opta_rank": 27,
+      "rating": 89.3,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Paul Rimmer",
+      "status": "Current",
+      "preferences": [
+        "Manchester City",
+        "PSG",
+        "Olympique Marseille"
+      ],
+      "assignedClub": "Manchester City"
+    },
+    "club": {
+      "name": "Manchester City",
+      "opta_rank": 1,
+      "rating": 100,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Bharath Raj",
+      "status": "Current",
+      "preferences": [
+        "Milan",
+        "Atlético Madrid",
+        "Real Madrid"
+      ],
+      "assignedClub": "Milan"
+    },
+    "club": {
+      "name": "Milan",
+      "opta_rank": 13,
+      "rating": 91.1,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Robert Ryan",
+      "status": "Current",
+      "preferences": [
+        "Napoli",
+        "Manchester United",
+        "Bayer Leverkusen"
+      ],
+      "assignedClub": "Napoli"
+    },
+    "club": {
+      "name": "Napoli",
+      "opta_rank": 26,
+      "rating": 89.5,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Marc Ques",
+      "status": "Current",
+      "preferences": [
+        "RB Leipzig",
+        "Internazionale",
+        "Porto"
+      ],
+      "assignedClub": "RB Leipzig"
+    },
+    "club": {
+      "name": "RB Leipzig",
+      "opta_rank": 21,
+      "rating": 90.2,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Gianluca Ghio",
+      "status": "Current",
+      "preferences": [
+        "Nottingham Forest",
+        "Bologna",
+        "Strasbourg"
+      ],
+      "assignedClub": "Nottingham Forest"
+    },
+    "club": {
+      "name": "Nottingham Forest",
+      "opta_rank": 73,
+      "rating": 83.7,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Ricardo Alexandre",
+      "status": "Current",
+      "preferences": [
+        "Brighton & Hove Albion",
+        "Crystal Palace",
+        "Porto"
+      ],
+      "assignedClub": "Brighton & Hove Albion"
+    },
+    "club": {
+      "name": "Brighton & Hove Albion",
+      "opta_rank": 22,
+      "rating": 90.2,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Ze Quim",
+      "status": "Current",
+      "preferences": [
+        "Nice",
+        "Freiburg",
+        "Borussia M'gladbach"
+      ],
+      "assignedClub": "Nice"
+    },
+    "club": {
+      "name": "Nice",
+      "opta_rank": 46,
+      "rating": 86,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Toze Trapattoni",
+      "status": "Current",
+      "preferences": [
+        "Feyenoord",
+        "RB Leipzig",
+        "Monaco"
+      ],
+      "assignedClub": "Feyenoord"
+    },
+    "club": {
+      "name": "Feyenoord",
+      "opta_rank": 41,
+      "rating": 86.4,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Armando Pierone",
+      "status": "Current",
+      "preferences": [
+        "Bologna",
+        "Mallorca",
+        "Crystal Palace"
+      ],
+      "assignedClub": "Bologna"
+    },
+    "club": {
+      "name": "Bologna",
+      "opta_rank": 33,
+      "rating": 88,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Saverio",
+      "status": "Current",
+      "preferences": [
+        "Como",
+        "Bologna",
+        "Milan"
+      ],
+      "assignedClub": "Como"
+    },
+    "club": {
+      "name": "Como",
+      "opta_rank": 446,
+      "rating": 73.7,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Jamie Alldridge",
+      "status": "Current",
+      "preferences": [
+        "Mainz 05",
+        "Union berlin",
+        "West Ham United"
+      ],
+      "assignedClub": "Mainz 05"
+    },
+    "club": {
+      "name": "Mainz 05",
+      "opta_rank": 129,
+      "rating": 80.7,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Noisy Steve",
+      "status": "Current",
+      "preferences": [
+        "Racing Club",
+        "América",
+        "Palmeiras"
+      ],
+      "assignedClub": "Racing Club"
+    },
+    "club": {
+      "name": "Racing Club",
+      "opta_rank": 220,
+      "rating": 77.7,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Ash L",
+      "status": "Current",
+      "preferences": [
+        "Monaco",
+        "Real Sociedad",
+        "Lille"
+      ],
+      "assignedClub": "Monaco"
+    },
+    "club": {
+      "name": "Monaco",
+      "opta_rank": 47,
+      "rating": 85.9,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Yamil Mc",
+      "status": "Current",
+      "preferences": [
+        "Ajax",
+        "Tottenham Hotspur",
+        "Palmeiras"
+      ],
+      "assignedClub": "Ajax"
+    },
+    "club": {
+      "name": "Ajax",
+      "opta_rank": 116,
+      "rating": 81.3,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Nuno Marques",
+      "status": "Current",
+      "preferences": [
+        "Sporting CP",
+        "Casa Pia",
+        "Red Star"
+      ],
+      "assignedClub": "Sporting CP"
+    },
+    "club": {
+      "name": "Sporting CP",
+      "opta_rank": 19,
+      "rating": 90.3,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Fredrik Johansson",
+      "status": "Current",
+      "preferences": [
+        "Bayern München",
+        "Atalanta",
+        "Napoli"
+      ],
+      "assignedClub": "Bayern München"
+    },
+    "club": {
+      "name": "Bayern München",
+      "opta_rank": 7,
+      "rating": 94.2,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "RJ Alston",
+      "status": "Current",
+      "preferences": [
+        "Everton",
+        "Athletic Club",
+        "Atlético Madrid"
+      ],
+      "assignedClub": "Everton"
+    },
+    "club": {
+      "name": "Everton",
+      "opta_rank": 51,
+      "rating": 85.6,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Tharanidharan",
+      "status": "Current",
+      "preferences": [
+        "Roma",
+        "Athletic Club",
+        "Real Sociedad"
+      ],
+      "assignedClub": "Roma"
+    },
+    "club": {
+      "name": "Roma",
+      "opta_rank": 32,
+      "rating": 88.1,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Bojan H",
+      "status": "Current",
+      "preferences": [
+        "Internazionale",
+        "Atalanta",
+        "Strasbourg"
+      ],
+      "assignedClub": "Internazionale"
+    },
+    "club": {
+      "name": "Internazionale",
+      "opta_rank": 3,
+      "rating": 97.5,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "João Rocha",
+      "status": "Current",
+      "preferences": [
+        "Brentford",
+        "Atalanta",
+        "Stuttgart"
+      ],
+      "assignedClub": "Brentford"
+    },
+    "club": {
+      "name": "Brentford",
+      "opta_rank": 42,
+      "rating": 86.4,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Melvin Udall",
+      "status": "Current",
+      "preferences": [
+        "Lille",
+        "Atalanta",
+        "West Ham United"
+      ],
+      "assignedClub": "Lille"
+    },
+    "club": {
+      "name": "Lille",
+      "opta_rank": 36,
+      "rating": 87.2,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Pedro vilar",
+      "status": "Current",
+      "preferences": [
+        "Porto",
+        "Liverpool",
+        "Olympique Lyonnais"
+      ],
+      "assignedClub": "Olympique Lyonnais"
+    },
+    "club": {
+      "name": "Olympique Lyonnais",
+      "opta_rank": 77,
+      "rating": 83.3,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Marco G",
+      "status": "Current",
+      "preferences": [
+        "PSG",
+        "Atlético Madrid",
+        "Borussia Dortmund"
+      ],
+      "assignedClub": "Atlético Madrid"
+    },
+    "club": {
+      "name": "Atlético Madrid",
+      "opta_rank": 9,
+      "rating": 92.4,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Chris East",
+      "status": "Current",
+      "preferences": [
+        "Arsenal",
+        "Eintracht Frankfurt",
+        "Sporting CP"
+      ],
+      "assignedClub": "Eintracht Frankfurt"
+    },
+    "club": {
+      "name": "Eintracht Frankfurt",
+      "opta_rank": 56,
+      "rating": 84.9,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "The Strongest",
+      "status": "Current",
+      "preferences": [
+        "Bayer Leverkusen",
+        "Tottenham Hotspur",
+        "Brighton & Hove Albion"
+      ],
+      "assignedClub": "Tottenham Hotspur"
+    },
+    "club": {
+      "name": "Tottenham Hotspur",
+      "opta_rank": 15,
+      "rating": 90.8,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Carlos Miranda",
+      "status": "Current",
+      "preferences": [
+        "Benfica",
+        "Palmeiras",
+        "Flamengo"
+      ],
+      "assignedClub": "Palmeiras"
+    },
+    "club": {
+      "name": "Palmeiras",
+      "opta_rank": 57,
+      "rating": 84.9,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Landucci",
+      "status": "Current",
+      "preferences": [
+        "Juventus",
+        "Zenit",
+        "Dinamo Moskva"
+      ],
+      "assignedClub": "Zenit"
+    },
+    "club": {
+      "name": "Zenit",
+      "opta_rank": 80,
+      "rating": 83.2,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Simon Thomas",
+      "status": "Current",
+      "preferences": [
+        "Liverpool",
+        "AFC Bournemouth",
+        "Brentford"
+      ],
+      "assignedClub": "AFC Bournemouth"
+    },
+    "club": {
+      "name": "AFC Bournemouth",
+      "opta_rank": 55,
+      "rating": 85.2,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "João Alves",
+      "status": "Current",
+      "preferences": [
+        "Manchester United",
+        "Nice",
+        "Rangers"
+      ],
+      "assignedClub": "Rangers"
+    },
+    "club": {
+      "name": "Rangers",
+      "opta_rank": 71,
+      "rating": 83.8,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Anthony Guardiola",
+      "status": "Current",
+      "preferences": [
+        "Porto",
+        "River Plate",
+        "Celta de Vigo"
+      ],
+      "assignedClub": "River Plate"
+    },
+    "club": {
+      "name": "River Plate",
+      "opta_rank": 123,
+      "rating": 80.9,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Mattia Bertonati",
+      "status": "Current",
+      "preferences": [
+        "Milan",
+        "Napoli",
+        "Atalanta"
+      ],
+      "assignedClub": "Atalanta"
+    },
+    "club": {
+      "name": "Atalanta",
+      "opta_rank": 17,
+      "rating": 90.4,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Adam",
+      "status": "Current",
+      "preferences": [
+        "Bayer Leverkusen",
+        "Crystal Palace",
+        "Leeds United"
+      ],
+      "assignedClub": "Crystal Palace"
+    },
+    "club": {
+      "name": "Crystal Palace",
+      "opta_rank": 60,
+      "rating": 84.7,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Dan Wallace",
+      "status": "Current",
+      "preferences": [
+        "Chelsea",
+        "Leeds United",
+        "Aris"
+      ],
+      "assignedClub": "Leeds United"
+    },
+    "club": {
+      "name": "Leeds United",
+      "opta_rank": 81,
+      "rating": 83.1,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Mister Trx",
+      "status": "Current",
+      "preferences": [
+        "Barcelona",
+        "København",
+        "Bodø / Glimt"
+      ],
+      "assignedClub": "København"
+    },
+    "club": {
+      "name": "København",
+      "opta_rank": 76,
+      "rating": 83.5,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Norman Little",
+      "status": "Current",
+      "preferences": [
+        "Newcastle United",
+        "Valencia",
+        "Stuttgart"
+      ],
+      "assignedClub": "Stuttgart"
+    },
+    "club": {
+      "name": "Stuttgart",
+      "opta_rank": 35,
+      "rating": 87.6,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Alain Colonna",
+      "status": "Former",
+      "preferences": [
+        "Juventus",
+        "Derby County",
+        "Parma"
+      ],
+      "assignedClub": "Derby County"
+    },
+    "club": {
+      "name": "Derby County",
+      "opta_rank": 349,
+      "rating": 75.1,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Francesco Senesi",
+      "status": "Former",
+      "preferences": [
+        "Leeds United",
+        "Leicester City",
+        "Sevilla"
+      ],
+      "assignedClub": "Leicester City"
+    },
+    "club": {
+      "name": "Leicester City",
+      "opta_rank": 64,
+      "rating": 84.2,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Patricio Areola",
+      "status": "Former",
+      "preferences": [
+        "Aston villa",
+        "Napoli",
+        "Werder Bremen"
+      ],
+      "assignedClub": "Werder Bremen"
+    },
+    "club": {
+      "name": "Werder Bremen",
+      "opta_rank": 91,
+      "rating": 82.6,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Albee Ballisti",
+      "status": "Former",
+      "preferences": [
+        "Napoli",
+        "PSV",
+        "Feyenoord"
+      ],
+      "assignedClub": "PSV"
+    },
+    "club": {
+      "name": "PSV",
+      "opta_rank": 23,
+      "rating": 90.1,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Bozzfordy",
+      "status": "New",
+      "preferences": [
+        "Bristol Rovers",
+        "Nottingham Forest",
+        "Sunderland"
+      ],
+      "assignedClub": "Sunderland"
+    },
+    "club": {
+      "name": "Sunderland",
+      "opta_rank": 227,
+      "rating": 77.6,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Jonesy",
+      "status": "New",
+      "preferences": [
+        "Chelsea",
+        "Fulham",
+        "Brentford"
+      ],
+      "assignedClub": "Fulham"
+    },
+    "club": {
+      "name": "Fulham",
+      "opta_rank": 54,
+      "rating": 85.2,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Pedro Oliveira",
+      "status": "New",
+      "preferences": [
+        "Sporting Braga",
+        "Boca Juniors",
+        "Celtic"
+      ],
+      "assignedClub": "Sporting Braga"
+    },
+    "club": {
+      "name": "Sporting Braga",
+      "opta_rank": 75,
+      "rating": 83.6,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Thomas Askew",
+      "status": "New",
+      "preferences": [
+        "Brighton & Hove Albion",
+        "Como",
+        "Strasbourg"
+      ],
+      "assignedClub": "Strasbourg"
+    },
+    "club": {
+      "name": "Strasbourg",
+      "opta_rank": 106,
+      "rating": 81.8,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Paul Stuart",
+      "status": "New",
+      "preferences": [
+        "Celtic",
+        "Feyenoord",
+        "Lille"
+      ],
+      "assignedClub": "Celtic"
+    },
+    "club": {
+      "name": "Celtic",
+      "opta_rank": 94,
+      "rating": 82.5,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Giorgio Pucci",
+      "status": "New",
+      "preferences": [
+        "milan",
+        "RB Leipzig",
+        "Olympique Marseille"
+      ],
+      "assignedClub": "Olympique Marseille"
+    },
+    "club": {
+      "name": "Olympique Marseille",
+      "opta_rank": 44,
+      "rating": 86.2,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Steve Allington",
+      "status": "Current",
+      "preferences": [
+        "Liverpool",
+        "PSG",
+        "Bayern München"
+      ],
+      "assignedClub": "Real Sociedad"
+    },
+    "club": {
+      "name": "Real Sociedad",
+      "opta_rank": 20,
+      "rating": 90.2,
+      "division": 1
+    },
+    "division": 1
+  },
+  {
+    "manager": {
+      "name": "Chris Taylor",
+      "status": "Current",
+      "preferences": [
+        "Manchester United",
+        "Bayern München",
+        "Bayer Leverkusen"
+      ],
+      "assignedClub": "Girona"
+    },
+    "club": {
+      "name": "Girona",
+      "opta_rank": 28,
+      "rating": 89.2,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Alessandro Ioli",
+      "status": "Current",
+      "preferences": [
+        "Barcelona",
+        "PSG",
+        "Chelsea"
+      ],
+      "assignedClub": "Lazio"
+    },
+    "club": {
+      "name": "Lazio",
+      "opta_rank": 30,
+      "rating": 88.6,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Kevin mcgregor",
+      "status": "Current",
+      "preferences": [
+        "Manchester United",
+        "Barcelona",
+        "Chelsea"
+      ],
+      "assignedClub": "Lens"
+    },
+    "club": {
+      "name": "Lens",
+      "opta_rank": 31,
+      "rating": 88.1,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "David Inglis",
+      "status": "Current",
+      "preferences": [
+        "Aston Villa",
+        "PSG",
+        "Bologna"
+      ],
+      "assignedClub": "West Ham United"
+    },
+    "club": {
+      "name": "West Ham United",
+      "opta_rank": 34,
+      "rating": 87.7,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Feargal A Hickey",
+      "status": "Current",
+      "preferences": [
+        "Arsenal",
+        "Juventus",
+        "Eintracht Frankfurt"
+      ],
+      "assignedClub": "Wolverhampton Wanderers"
+    },
+    "club": {
+      "name": "Wolverhampton Wanderers",
+      "opta_rank": 37,
+      "rating": 87.1,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Shashi P",
+      "status": "Current",
+      "preferences": [
+        "Barcelona",
+        "Bayern München",
+        "Internazionale"
+      ],
+      "assignedClub": "Galatasaray"
+    },
+    "club": {
+      "name": "Galatasaray",
+      "opta_rank": 38,
+      "rating": 86.8,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Pedro Martinez",
+      "status": "Current",
+      "preferences": [
+        "Real Madrid",
+        "PSG",
+        "Manchester City"
+      ],
+      "assignedClub": "Rennes"
+    },
+    "club": {
+      "name": "Rennes",
+      "opta_rank": 39,
+      "rating": 86.6,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Jonathan Raine",
+      "status": "Current",
+      "preferences": [
+        "Manchester United",
+        "Barcelona",
+        "Bayern München"
+      ],
+      "assignedClub": "Union Saint-Gilloise"
+    },
+    "club": {
+      "name": "Union Saint-Gilloise",
+      "opta_rank": 40,
+      "rating": 86.5,
+      "division": 2
+    },
+    "division": 2
+  },
+  {
+    "manager": {
+      "name": "Chris Mackenzie",
+      "status": "Current",
+      "preferences": [
+        "Liverpool",
+        "Aston Villa",
+        "Newcastle United"
+      ],
+      "assignedClub": "Fiorentina"
+    },
+    "club": {
+      "name": "Fiorentina",
+      "opta_rank": 43,
+      "rating": 86.2,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Paul Masters",
+      "status": "Current",
+      "preferences": [
+        "Liverpool",
+        "Athletic Club",
+        "Sporting CP"
+      ],
+      "assignedClub": "Fenerbahçe"
+    },
+    "club": {
+      "name": "Fenerbahçe",
+      "opta_rank": 45,
+      "rating": 86.1,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Ricardo Ferreira",
+      "status": "Current",
+      "preferences": [
+        "Benfica",
+        "Real Madrid",
+        "Milan"
+      ],
+      "assignedClub": "Real Betis"
+    },
+    "club": {
+      "name": "Real Betis",
+      "opta_rank": 48,
+      "rating": 85.8,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Patrik Breznicky",
+      "status": "Current",
+      "preferences": [
+        "Real Madrid",
+        "Benfica",
+        "Ajax"
+      ],
+      "assignedClub": "Salzburg"
+    },
+    "club": {
+      "name": "Salzburg",
+      "opta_rank": 49,
+      "rating": 85.8,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Attilio Bonnici",
+      "status": "Current",
+      "preferences": [
+        "PSG",
+        "Milan",
+        "Roma"
+      ],
+      "assignedClub": "Torino"
+    },
+    "club": {
+      "name": "Torino",
+      "opta_rank": 50,
+      "rating": 85.7,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Dave Oz Osborne",
+      "status": "Current",
+      "preferences": [
+        "Newcastle United",
+        "Borussia Dortmund",
+        "Eintracht Frankfurt"
+      ],
+      "assignedClub": "Al Hilal"
+    },
+    "club": {
+      "name": "Al Hilal",
+      "opta_rank": 53,
+      "rating": 85.4,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Golden bear",
+      "status": "Current",
+      "preferences": [
+        "Liverpool",
+        "Arsenal",
+        "Monaco"
+      ],
+      "assignedClub": "Brest"
+    },
+    "club": {
+      "name": "Brest",
+      "opta_rank": 58,
+      "rating": 84.9,
+      "division": 3
+    },
+    "division": 3
+  },
+  {
+    "manager": {
+      "name": "Heath Brown",
+      "status": "Current",
+      "preferences": [
+        "Bayern München",
+        "Bayer Leverkusen",
+        "Nottingham Forest"
+      ],
+      "assignedClub": "Slavia Praha"
+    },
+    "club": {
+      "name": "Slavia Praha",
+      "opta_rank": 62,
+      "rating": 84.4,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Pane Trifunov",
+      "status": "Former",
+      "preferences": [
+        "Juventus",
+        "Nottingham Forest",
+        "Eintracht Frankfurt"
+      ],
+      "assignedClub": "Freiburg"
+    },
+    "club": {
+      "name": "Freiburg",
+      "opta_rank": 63,
+      "rating": 84.4,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Pharaoh Atem",
+      "status": "Former",
+      "preferences": [
+        "Barcelona",
+        "Internazionale",
+        "Newcastle United"
+      ],
+      "assignedClub": "Monza"
+    },
+    "club": {
+      "name": "Monza",
+      "opta_rank": 65,
+      "rating": 84.2,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Joe Pound",
+      "status": "Former",
+      "preferences": [
+        "Manchester United",
+        "Barcelona",
+        "Real Madrid"
+      ],
+      "assignedClub": "Sevilla"
+    },
+    "club": {
+      "name": "Sevilla",
+      "opta_rank": 66,
+      "rating": 84.2,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Lee Reynolds",
+      "status": "Former",
+      "preferences": [
+        "Crystal Palace",
+        "Atalanta",
+        "Borussia Dortmund"
+      ],
+      "assignedClub": "Anderlecht"
+    },
+    "club": {
+      "name": "Anderlecht",
+      "opta_rank": 67,
+      "rating": 84.1,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "unstabledave",
+      "status": "Former",
+      "preferences": [
+        "Arsenal",
+        "Crystal Palace",
+        "Leyton Orient"
+      ],
+      "assignedClub": "Al Nassr"
+    },
+    "club": {
+      "name": "Al Nassr",
+      "opta_rank": 68,
+      "rating": 83.9,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Sir Simone",
+      "status": "Former",
+      "preferences": [
+        "Juventus",
+        "RB Leipzig",
+        "Atalanta"
+      ],
+      "assignedClub": "Atlético Mineiro"
+    },
+    "club": {
+      "name": "Atlético Mineiro",
+      "opta_rank": 69,
+      "rating": 83.9,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Ian Imber",
+      "status": "Former",
+      "preferences": [
+        "Valencia",
+        "Leyton Orient",
+        "Benfica"
+      ],
+      "assignedClub": "Getafe"
+    },
+    "club": {
+      "name": "Getafe",
+      "opta_rank": 70,
+      "rating": 83.9,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Daz hughes",
+      "status": "Former",
+      "preferences": [
+        "Arsenal",
+        "Chelsea",
+        "PSG"
+      ],
+      "assignedClub": "Las Palmas"
+    },
+    "club": {
+      "name": "Las Palmas",
+      "opta_rank": 72,
+      "rating": 83.8,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Dan Baker",
+      "status": "Former",
+      "preferences": [
+        "Manchester United",
+        "Sporting CP",
+        "Tottenham Hotspur"
+      ],
+      "assignedClub": "Sparta Praha"
+    },
+    "club": {
+      "name": "Sparta Praha",
+      "opta_rank": 74,
+      "rating": 83.6,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Padraig Corcoran",
+      "status": "Former",
+      "preferences": [
+        "Manchester United",
+        "Brighton & Hove Albion",
+        "Real Madrid"
+      ],
+      "assignedClub": "Wolfsburg"
+    },
+    "club": {
+      "name": "Wolfsburg",
+      "opta_rank": 78,
+      "rating": 83.3,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Jerod Ramnarine",
+      "status": "Former",
+      "preferences": [
+        "Roma",
+        "Villarreal",
+        "Monaco"
+      ],
+      "assignedClub": "Union Berlin"
+    },
+    "club": {
+      "name": "Union Berlin",
+      "opta_rank": 79,
+      "rating": 83.2,
+      "division": 4
+    },
+    "division": 4
+  },
+  {
+    "manager": {
+      "name": "Nick Justice",
+      "status": "Former",
+      "preferences": [
+        "Bologna",
+        "Bologna",
+        "Bologna"
+      ],
+      "assignedClub": "Osasuna"
+    },
+    "club": {
+      "name": "Osasuna",
+      "opta_rank": 82,
+      "rating": 83,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Mohammed Ajmal",
+      "status": "New",
+      "preferences": [
+        "Tottenham Hotspur",
+        "Barcelona",
+        "Benfica"
+      ],
+      "assignedClub": "Antwerp"
+    },
+    "club": {
+      "name": "Antwerp",
+      "opta_rank": 83,
+      "rating": 82.9,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Chris Buchan",
+      "status": "New",
+      "preferences": [
+        "Rangers",
+        "Newcastle United",
+        "Brighton & Hove Albion"
+      ],
+      "assignedClub": "Maccabi Haifa"
+    },
+    "club": {
+      "name": "Maccabi Haifa",
+      "opta_rank": 84,
+      "rating": 82.8,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Carl Richardson",
+      "status": "New",
+      "preferences": [
+        "Eintracht Frankfurt",
+        "PSG",
+        "Internazionale"
+      ],
+      "assignedClub": "Borussia M'gladbach"
+    },
+    "club": {
+      "name": "Borussia M'gladbach",
+      "opta_rank": 85,
+      "rating": 82.8,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Okeeno Grant",
+      "status": "New",
+      "preferences": [
+        "Internazionale",
+        "Napoli",
+        "Bayer Leverkusen"
+      ],
+      "assignedClub": "Flamengo"
+    },
+    "club": {
+      "name": "Flamengo",
+      "opta_rank": 86,
+      "rating": 82.7,
+      "division": 5
+    },
+    "division": 5
+  },
+  {
+    "manager": {
+      "name": "Sampson Gyekye",
+      "status": "New",
+      "preferences": [
+        "Liverpool",
+        "Real Madrid",
+        "Manchester City"
+      ],
+      "assignedClub": "Udinese"
+    },
+    "club": {
+      "name": "Udinese",
+      "opta_rank": 87,
+      "rating": 82.7,
+      "division": 5
+    },
+    "division": 5
+  }
+]`;
+
+        // PASTE YOUR ASSET URLs HERE
+        const logoUrl = "https://anotherurl.wordpress.com/wp-content/uploads/2025/06/high-resolution-color-logo.png"; 
+        const tuneUrl = "https://anotherurl.wordpress.com/wp-content/uploads/2025/06/ten-years-top-100.mp3"; 
+
+
+        // === GLOBAL VARIABLES ===
+        let finalAllocations = []; 
+        let revealIndex = 0;
+        let shuffledRevealList = [];
+
+        // === HELPER FUNCTIONS ===
+        function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } }
+
+        function handleResetAppView() {
+            const revealCardAreaEl = document.getElementById('revealCardArea');
+            const searchResultsAreaEl = document.getElementById('searchResultsArea');
+            const searchInputEl = document.getElementById('searchInput');
+            const revealNextButton = document.getElementById('revealNextButton');
+            const revealSectionEl = document.getElementById('revealSection');
+            const fullListSectionEl = document.getElementById('fullListSection');
+            const showAllButton = document.getElementById('showAllButton');
+            revealIndex = 0;
+            if (finalAllocations.length > 0) { shuffledRevealList = [...finalAllocations]; shuffleArray(shuffledRevealList); } else { shuffledRevealList = []; }
+            if (revealCardAreaEl) revealCardAreaEl.innerHTML = 'Click "Reveal Next Manager" to start...';
+            if (searchResultsAreaEl) searchResultsAreaEl.innerHTML = ''; 
+            if (searchInputEl) searchInputEl.value = ''; 
+            if (revealNextButton) revealNextButton.disabled = shuffledRevealList.length === 0;
+            if(revealSectionEl) revealSectionEl.classList.remove('hidden');
+            if(fullListSectionEl) fullListSectionEl.classList.add('hidden');
+            if(showAllButton) showAllButton.textContent = "Show Full List";
+        }
+        
+        // MODIFIED: Added robust error handling for JSON parsing
+        function loadAndDisplayPreloadedData() {
+            const revealCardAreaEl = document.getElementById('revealCardArea');
+            const revealNextButton = document.getElementById('revealNextButton');
+            try {
+                if (preloadedAllocationsJSON && preloadedAllocationsJSON.trim() !== '[]' && preloadedAllocationsJSON.trim() !== '') {
+                    finalAllocations = JSON.parse(preloadedAllocationsJSON);
+                } else { finalAllocations = []; }
+                
+                if (finalAllocations.length > 0) {
+                    shuffledRevealList = [...finalAllocations]; 
+                    shuffleArray(shuffledRevealList); 
+                    if(revealCardAreaEl) revealCardAreaEl.innerHTML = 'Click "Reveal Next Manager" to start...';
+                    if(revealNextButton) revealNextButton.disabled = false;
+                    updateFullListTable();
+                } else {
+                    if(revealCardAreaEl) revealCardAreaEl.innerHTML = "<p class='text-center text-red-500 font-semibold'>No pre-loaded allocation data found. The JSON data may be empty or missing.</p>";
+                    if(revealNextButton) revealNextButton.disabled = true;
+                    updateFullListTable();
+                }
+            } catch (error) { 
+                console.error("CRITICAL ERROR parsing pre-loaded JSON data:", error); 
+                if (revealCardAreaEl) {
+                    revealCardAreaEl.innerHTML = `<div class="text-red-600 text-left"><p class="font-bold text-center">Error Loading Allocations!</p><p class="mt-2 text-sm">The pre-loaded JSON data in the script is invalid and could not be parsed.</p><p class="mt-1 text-xs font-mono bg-red-50 p-2 rounded">Error details: ${error.message}</p></div>`;
+                }
+            }
+        }
+
+        function handleRevealNext() {
+            const revealTuneEl = document.getElementById('revealTune');
+            const revealCardAreaEl = document.getElementById('revealCardArea');
+            const revealNextButton = document.getElementById('revealNextButton');
+            if (shuffledRevealList.length === 0) return;
+            if (revealTuneEl && revealTuneEl.src && !revealTuneEl.src.endsWith("#")) { revealTuneEl.currentTime = 0; revealTuneEl.play().catch(e => console.warn("Audio play failed:", e)); }
+            if (revealIndex >= shuffledRevealList.length) {
+                if(revealCardAreaEl) revealCardAreaEl.innerHTML = "<p class='text-center font-semibold text-green-600'>All managers revealed!</p>";
+                if(revealNextButton) revealNextButton.disabled = true;
+                return;
+            }
+            const item = shuffledRevealList[revealIndex];
+            const clubName = item.club ? item.club.name : 'N/A';
+            const clubRank = item.club ? item.club.opta_rank : 'N/A';
+            const clubDivision = item.division || (item.club ? item.club.division : null) || 'N/A';
+            if(revealCardAreaEl) revealCardAreaEl.innerHTML = `<div class="text-left w-full p-4"><p class="text-sm text-gray-500 text-center mb-2">Manager Revealed (${revealIndex + 1}/${shuffledRevealList.length})</p><h3 class="text-2xl font-bold text-indigo-600 mb-2">${item.manager.name} <span class="text-lg font-normal text-gray-500">(${item.manager.status})</span></h3><p><strong>Assigned Club:</strong> ${clubName}</p><p><strong>Club's Opta Rank:</strong> ${clubRank}</p><p><strong>Division:</strong> ${clubDivision}</p><div class="mt-4 text-center"><button onclick="getManagerHotTake('${item.manager.name.replace(/'/g, "\\'")}', '${item.manager.status}', '${clubName.replace(/'/g, "\\'")}', ${clubRank !== 'N/A' ? clubRank : null}, ${clubDivision !== 'N/A' ? clubDivision : null}, this)" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg text-sm transition duration-150 ease-in-out">✨ Get Pundit's Hot Take</button></div><div id="geminiHotTakeResult_${revealIndex}" class="mt-3 text-sm text-gray-700 italic p-3 bg-indigo-50 rounded-md min-h-[40px]"></div></div>`;
+            revealIndex++;
+            if(revealNextButton) revealNextButton.disabled = (revealIndex >= shuffledRevealList.length);
+        }
+
+        async function getManagerHotTake(managerName, managerStatus, clubName, clubRank, clubDivision, buttonElement) {
+            const resultDivId = buttonElement.parentNode.parentNode.querySelector('[id^="geminiHotTakeResult_"]').id;
+            const resultDiv = document.getElementById(resultDivId);
+            if (!resultDiv) { console.error("Could not find result div for Gemini content."); return; }
+            resultDiv.innerHTML = '<div class="flex items-center justify-center"><div class="gemini-spinner"></div> Generating...</div>';
+            buttonElement.disabled = true;
+            const takeStyles = ["pundit hot take", "shocked fan reaction", "rival manager's sarcastic comment", "club legend's optimistic quote", "sensationalist newspaper headline", "tactical insight", "transfer speculation snippet"];
+            const randomStyle = takeStyles[Math.floor(Math.random() * takeStyles.length)];
+            const prompt = `Generate a short, exciting, and slightly exaggerated '${randomStyle}' (1-2 sentences, max 40 words) about football manager ${managerName} (${managerStatus}) being appointed to ${clubName} (Opta Rank: ${clubRank || 'Unknown Rank'}), now in Division ${clubDivision || 'an unknown division'}. Focus on a potential storyline or impact. Be creative and punchy. If the style is 'newspaper headline', make it sound like one.`;
+            const apiKey = ""; const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }]; const payload = { contents: chatHistory };
+            try {
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) { const errorData = await response.json(); throw new Error(`Gemini API request failed: ${errorData?.error?.message || response.statusText}`); }
+                const result = await response.json();
+                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+                    resultDiv.innerHTML = `<p>"${result.candidates[0].content.parts[0].text.replace(/\n/g, '<br>')}"</p>`;
+                } else { resultDiv.textContent = "Couldn't generate a hot take (unexpected response)."; }
+            } catch (error) { resultDiv.textContent = `Error: ${error.message || "Failed to get prediction."}`; }
+        }
+
+        function toggleFullListView() {
+            const fullListSectionEl = document.getElementById('fullListSection');
+            const revealSectionEl = document.getElementById('revealSection');
+            const showAllButton = document.getElementById('showAllButton');
+            if (!fullListSectionEl || !revealSectionEl || !showAllButton) return;
+            const isHidden = fullListSectionEl.classList.contains('hidden');
+            fullListSectionEl.classList.toggle('hidden', !isHidden); 
+            revealSectionEl.classList.toggle('hidden', isHidden); 
+            showAllButton.textContent = isHidden ? "Hide Full List" : "Show Full List";
+        }
+
+        function updateFullListTable() {
+            const allocationsTableBodyEl = document.getElementById('allocationsTableBody');
+            if(!allocationsTableBodyEl) return;
+            allocationsTableBodyEl.innerHTML = ''; 
+            if (finalAllocations.length === 0) { const row = allocationsTableBodyEl.insertRow(); const cell = row.insertCell(); cell.colSpan = 5; cell.textContent = "No allocation data available."; cell.className = "text-center py-4"; return; }
+            const sortedForTable = [...finalAllocations].sort((a, b) => { const divA = a.division || (a.club ? a.club.division : null) || Infinity; const divB = b.division || (b.club ? b.club.division : null) || Infinity; if (divA !== divB) return divA - divB; const rankA = a.club ? a.club.opta_rank : Infinity; const rankB = b.club ? b.club.opta_rank : Infinity; return rankA - rankB; });
+            sortedForTable.forEach(item => { const row = allocationsTableBodyEl.insertRow(); const clubDiv = item.division || (item.club ? item.club.division : null) || 'N/A'; row.insertCell().textContent = clubDiv; row.insertCell().textContent = item.manager.name; row.insertCell().textContent = item.club ? item.club.name : 'N/A'; row.insertCell().textContent = item.club ? item.club.opta_rank : 'N/A'; row.insertCell().textContent = item.manager.status; Array.from(row.cells).forEach(cell => cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700'); });
+        }
+        
+        function handleSearch() {
+            const searchInputEl = document.getElementById('searchInput');
+            const searchResultsAreaEl = document.getElementById('searchResultsArea');
+            if (!searchInputEl || !searchResultsAreaEl) return;
+            const query = searchInputEl.value.trim().toLowerCase();
+            searchResultsAreaEl.innerHTML = ''; 
+            if (!query) { searchResultsAreaEl.innerHTML = "<p class='text-sm text-gray-500'>Enter a manager or club name to search.</p>"; return; }
+            if (finalAllocations.length === 0) { searchResultsAreaEl.innerHTML = "<p class='text-sm text-gray-500'>No allocation data loaded.</p>"; return; }
+            const matches = finalAllocations.filter(alloc => (alloc.manager?.name?.toLowerCase().includes(query)) || (alloc.club?.name?.toLowerCase().includes(query)));
+            if (matches.length === 0) { searchResultsAreaEl.innerHTML = `<p class='text-sm text-red-500'>No matches found for "${searchInputEl.value}".</p>`; } else { const ul = document.createElement('ul'); matches.forEach(item => { const li = document.createElement('li'); li.className = 'search-result-item'; li.innerHTML = `<p><strong>Manager:</strong> ${item.manager.name} (${item.manager.status})</p><p><strong>Club:</strong> ${item.club.name} (Rank: ${item.club.opta_rank})</p><p><strong>Division:</strong> ${item.division || 'N/A'}</p>`; ul.appendChild(li); }); searchResultsAreaEl.appendChild(ul); }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DEBUG: WordPress Display App - DOMContentLoaded");
+            const resetAppButton = document.getElementById('resetAppButton');
+            const revealNextButton = document.getElementById('revealNextButton');
+            const showAllButton = document.getElementById('showAllButton');
+            const searchButtonEl = document.getElementById('searchButton');
+            const appLogoEl = document.getElementById('appLogo');
+            const tuneEl = document.getElementById('revealTune');
+
+            if (appLogoEl && logoUrl && logoUrl !== '#') { 
+                appLogoEl.src = logoUrl;
+                appLogoEl.classList.remove('hidden'); 
+            } else if (appLogoEl) { 
+                appLogoEl.style.display = 'none'; 
+            }
+            if (tuneEl && tuneUrl && tuneUrl !== '#') {
+                tuneEl.src = tuneUrl;
+            }
+
+            if (resetAppButton) resetAppButton.addEventListener('click', handleResetAppView);
+            if(revealNextButton) revealNextButton.addEventListener('click', handleRevealNext);
+            if(showAllButton) showAllButton.addEventListener('click', toggleFullListView);
+            if(searchButtonEl) searchButtonEl.addEventListener('click', handleSearch);
+            
+            loadAndDisplayPreloadedData();
+        });
+    </script>
+</body>
+</html>
