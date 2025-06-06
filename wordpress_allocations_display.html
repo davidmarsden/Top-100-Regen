@@ -2056,6 +2056,8 @@
             const clubName = item.club ? item.club.name : 'N/A';
             const clubRank = item.club ? item.club.opta_rank : 'N/A';
             const clubDivision = item.division || (item.club ? item.club.division : null) || 'N/A';
+            if(revealCardAreaEl) revealCardAreaEl.innerHTML = `<div class="text-left w-full p-4"><p class="text-sm text-gray-500 text-center mb-2">Manager Revealed (${revealIndex + 1}/${shuffledRevealList.length})</p><h3 class="text-2xl font-bold text-indigo-600 mb-2">${item.manager.name} <span class="text-lg font-normal text-gray-500">(${item.manager.status})</span></h3><p><strong>Assigned Club:</strong> ${clubName}</p><p><strong>Club's Opta Rank:</strong> ${clubRank}</p><p><strong>Division:</strong> ${clubDivision}</p><div class="mt-4 text-center"></div></div>`;
+            revealIndex++;
             if(revealNextButton) revealNextButton.disabled = (revealIndex >= shuffledRevealList.length);
         }
 
